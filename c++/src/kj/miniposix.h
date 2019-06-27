@@ -123,7 +123,7 @@ inline size_t iovMax(size_t count) {
   // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html#tag_13_23_03_01
 
 #if defined(IOV_MAX)
-  // Solaris (and others?)
+  // Solaris, Mac (and others?)
   return IOV_MAX;
 #elif defined(UIO_MAXIOV)
   // Linux

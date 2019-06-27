@@ -176,7 +176,7 @@ if(NOT CAPNP_LITE)
   add_library(CapnProto::kj-gzip ALIAS kj-gzip)
 
   find_package(ZLIB)
-  if(ZLIB_FOUND)
+  if(ZLIB_FOUNDA)
     add_definitions(-D KJ_HAS_ZLIB=1)
     include_directories(${ZLIB_INCLUDE_DIRS})
     target_link_libraries(kj-gzip PUBLIC kj-async kj ${ZLIB_LIBRARIES})

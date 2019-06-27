@@ -396,8 +396,20 @@ public:
 
     static const byte ZEROS[4096] = { 0 };
 
-#if __APPLE__ || __CYGWIN__ || (defined(__ANDROID__) && __ANDROID_API__ < 24)
-    // Mac & Cygwin & Android API levels 23 and lower doesn't have pwritev().
+    // Align writes to 4kb file boundary, since they are going to perform best
+    auto prealignSize = size > sizeof(ZEROS) ? offset % sizeof(ZEROS) : 0;
+    KJ_ASSERT(prealignSize <= size, "The prealignment size is too big: this should not happen");
+
+    enum class
+#if __CYGWIN__ || (defined(__ANDROID__) && __ANDROID_API__ < 24)
+    constexpr bool ZERO_HAS_PWRITEV = false;
+#else
+    // Cygwin & Android API levels 23 and lower doesn't have pwritev().
+    if (prealignSize > 0) {
+      write(offset, kj::arrayPtr(ZEROS, prealignSize));
+      size -= prealignSize;
+      offset += prealignSize;
+    }
     while (size > sizeof(ZEROS)) {
       write(offset, ZEROS);
       size -= sizeof(ZEROS);
@@ -415,10 +427,25 @@ public:
       item.iov_len = sizeof(ZEROS);
     }
 
+#if __APPLE__
+    // Mac doesn't have pwritev, but it does have writev.
+    off_t ref = -1;
+    if (size > 0) {
+      KJ_SYSCALL(ref = lseek(fd, 0, SEEK_CUR));
+      KJ_SYSCALL(lseek(fd, offset, SEEK_SET));
+    }
+    auto const pwritev = [](int fd, const struct iovec* iov, int iovcnt, off_t){
+      return writev(fd, iov, iovcnt);
+    };
+#endif
+
     while (size > 0) {
       size_t iovCount;
       if (size >= iov.size() * sizeof(ZEROS)) {
         iovCount = iov.size();
+        if (prealignSize> 0) {
+
+        }
       } else {
         iovCount = size / sizeof(ZEROS);
         size_t rem = size % sizeof(ZEROS);
@@ -429,11 +456,16 @@ public:
 
       ssize_t n;
       KJ_SYSCALL(n = pwritev(fd, iov.begin(), count, offset));
-      KJ_ASSERT(n > 0, "pwrite() returned zero?");
+      KJ_ASSERT(n > 0, "pwritev() returned zero?");
 
       offset += n;
       size -= n;
     }
+#if __APPLE__
+    if (ref >= 0) {
+      KJ_SYSCALL(lseek(fd, ref, SEEK_SET));
+    }
+#endif
 #endif
   }
 
