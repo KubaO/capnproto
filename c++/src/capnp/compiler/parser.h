@@ -118,7 +118,7 @@ public:
     Parser<Orphan<Declaration::AnnotationApplication>> annotation;
     Parser<Orphan<LocatedInteger>> uid;
     Parser<Orphan<LocatedInteger>> ordinal;
-    Parser<Orphan<Declaration::StructEmbedding>> structEmbedding;
+    Parser<Orphan<Declaration::Embedding>> embedding;
     Parser<Orphan<Declaration::Param>> param;
 
     DeclParser usingDecl;

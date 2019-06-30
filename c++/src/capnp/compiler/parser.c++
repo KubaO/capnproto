@@ -22,7 +22,6 @@
 #include "parser.h"
 #include "type-id.h"
 #include <capnp/dynamic.h>
-#include <kj/parse/char.h>
 #include <kj/debug.h>
 #if !_MSC_VER
 #include <unistd.h>
@@ -606,26 +605,39 @@ CapnpParser::CapnpParser(Orphanage orphanageParam, ErrorReporter& errorReporterP
       }));
 
   // FIXME: This is parser abuse. Lexer should learn to deal with these.
-  parsers.structEmbedding = arena.copy(p::transformWithLocation(
-      p::sequence(op("<"), p::optional(integerLiteral), op(">")),
+  parsers.embedding = arena.copy(p::transformWithLocation(
+      p::oneOf(
+          p::sequence(op("["), integerLiteral, op("]"),
+                      p::optional(p::sequence(op("<"), integerLiteral, op(">")))),
+          p::sequence(p::optional(p::sequence(op("["), integerLiteral, op("]"))),
+                      op("<"), integerLiteral, op(">"))),
+#if 0
+      p::sequence(
+          p::optional(p::sequence(op("["), integerLiteral, op("]"))),
+          p::optional(p::sequence(op("<"), integerLiteral, op(">")))),
+#endif
       [this](kj::parse::Span<List<Token>::Reader::Iterator> location,
-             kj::Maybe<Located<uint64_t>>&& width) -> Orphan<Declaration::StructEmbedding> {
-         KJ_IF_MAYBE(w, width) {
-           if (w->value >= 65536) {
-             errorReporter.addError(w->startByte, w->endByte,
-                 "Structure embedding lengths cannot be greater than 65535.");
-           }
-         }
-         auto result = orphanage.newOrphan<Declaration::StructEmbedding>();
-         auto builder = result.get();
-         builder.setStartByte(location.begin()->getStartByte());
-         builder.setEndByte(location.end()->getEndByte());
-         KJ_IF_MAYBE(w, width) {
-           builder.adoptWidth(w->asProto<LocatedInteger>(orphanage));
-         } else {
-           builder.setNoWidth();
-         };
-         return result;
+             kj::Maybe<Located<uint64_t>>&& length, kj::Maybe<Located<uint64_t>>&& width)
+             -> Orphan<Declaration::Embedding> {
+        if (length == nullptr && width == nullptr) {
+          return {};
+        }
+        auto result = orphanage.newOrphan<Declaration::Embedding>();
+        auto builder = result.get();
+        builder.setStartByte(location.begin()->getStartByte());
+        builder.setEndByte(location.end()->getEndByte());
+        KJ_IF_MAYBE(l, length) {
+          builder.setArrayLength(l->asProto<LocatedInteger>(orphanage).getReader());
+        }
+        KJ_IF_MAYBE(w, width) {
+          if (w->value >= 65536) {
+            errorReporter.addError(w->startByte, w->endByte,
+                "Structure embedding width cannot be greater than 65535.");
+          } else {
+            builder.setStructWidth(w->asProto<LocatedInteger>(orphanage).getReader());
+          }
+        }
+        return result;
       }));
 
   // -----------------------------------------------------------------
@@ -710,12 +722,12 @@ CapnpParser::CapnpParser(Orphanage orphanageParam, ErrorReporter& errorReporterP
 
   parsers.fieldDecl = arena.copy(p::transform(
       p::sequence(identifier, parsers.ordinal,
-                  p::optional(parsers.structEmbedding),
+                  p::optional(parsers.embedding),
                   op(":"), parsers.expression,
                   p::optional(p::sequence(op("="), parsers.expression)),
                   p::many(parsers.annotation)),
       [this](Located<Text::Reader>&& name, Orphan<LocatedInteger>&& ordinal,
-             kj::Maybe<Orphan<Declaration::StructEmbedding>>&& structEmbedding,
+             kj::Maybe<Orphan<Declaration::Embedding>>&& embedding,
              Orphan<Expression>&& type, kj::Maybe<Orphan<Expression>>&& defaultValue,
              kj::Array<Orphan<Declaration::AnnotationApplication>>&& annotations)
                  -> DeclParserResult {
@@ -723,8 +735,8 @@ CapnpParser::CapnpParser(Orphanage orphanageParam, ErrorReporter& errorReporterP
         auto builder =
             initMemberDecl(decl.get(), kj::mv(name), kj::mv(ordinal), kj::mv(annotations))
                 .initField();
-        KJ_IF_MAYBE(embedding, structEmbedding) {
-          builder.adoptStructEmbedding(kj::mv(*embedding));
+        KJ_IF_MAYBE(e, embedding) {
+          builder.adoptEmbedding(kj::mv(*e));
         }
         builder.adoptType(kj::mv(type));
         KJ_IF_MAYBE(val, defaultValue) {

@@ -26,7 +26,7 @@ CAPNP_DECLARE_SCHEMA(b18aa5ac7a0d9420);
 CAPNP_DECLARE_SCHEMA(ec1619d4400a0290);
 CAPNP_DECLARE_SCHEMA(9aad50a41f4af45f);
 CAPNP_DECLARE_SCHEMA(97b14cbe7cfec712);
-CAPNP_DECLARE_SCHEMA(8b0f4400511c48f0);
+CAPNP_DECLARE_SCHEMA(8a7b4b722e846722);
 CAPNP_DECLARE_SCHEMA(c42305476bb4746f);
 CAPNP_DECLARE_SCHEMA(cafccddb68db1d11);
 CAPNP_DECLARE_SCHEMA(bb90d5c287870be6);
@@ -42,6 +42,7 @@ CAPNP_DECLARE_SCHEMA(c2573fe8a23e49f1);
 CAPNP_DECLARE_SCHEMA(8e3b5f79fe593656);
 CAPNP_DECLARE_SCHEMA(9dd1f724f4614a85);
 CAPNP_DECLARE_SCHEMA(baefc9120c56e274);
+CAPNP_DECLARE_SCHEMA(c886531d3d3f8cab);
 CAPNP_DECLARE_SCHEMA(903455f06065422b);
 CAPNP_DECLARE_SCHEMA(abd73485a9636bc9);
 CAPNP_DECLARE_SCHEMA(c863cd16969ee7fc);
@@ -248,7 +249,7 @@ struct Field {
     GROUP,
   };
   static constexpr  ::uint16_t NO_DISCRIMINANT = 65535u;
-  struct StructEmbedding;
+  struct Embedding;
   struct Slot;
   struct Group;
   struct Ordinal;
@@ -261,19 +262,15 @@ struct Field {
   };
 };
 
-struct Field::StructEmbedding {
-  StructEmbedding() = delete;
+struct Field::Embedding {
+  Embedding() = delete;
 
   class Reader;
   class Builder;
   class Pipeline;
-  enum Which: uint16_t {
-    NO_WIDTH,
-    WIDTH,
-  };
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(8b0f4400511c48f0, 1, 0)
+    CAPNP_DECLARE_STRUCT_HEADER(8a7b4b722e846722, 1, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -400,12 +397,14 @@ struct Type {
     STRUCT,
     INTERFACE,
     ANY_POINTER,
+    EMBEDDING,
   };
   struct List;
   struct Enum;
   struct Struct;
   struct Interface;
   struct AnyPointer;
+  struct Embedding;
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(d07378ede1f9cc60, 3, 1)
@@ -543,6 +542,21 @@ struct Type::AnyPointer::ImplicitMethodParameter {
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(baefc9120c56e274, 3, 1)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct Type::Embedding {
+  Embedding() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(c886531d3d3f8cab, 3, 1)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -1881,9 +1895,9 @@ private:
 };
 #endif  // !CAPNP_LITE
 
-class Field::StructEmbedding::Reader {
+class Field::Embedding::Reader {
 public:
-  typedef StructEmbedding Reads;
+  typedef Embedding Reads;
 
   Reader() = default;
   inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
@@ -1898,12 +1912,9 @@ public:
   }
 #endif  // !CAPNP_LITE
 
-  inline Which which() const;
-  inline bool isNoWidth() const;
-  inline  ::capnp::Void getNoWidth() const;
+  inline  ::uint32_t getArrayLength() const;
 
-  inline bool isWidth() const;
-  inline  ::uint16_t getWidth() const;
+  inline  ::uint16_t getStructWidth() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -1917,9 +1928,9 @@ private:
   friend class ::capnp::Orphanage;
 };
 
-class Field::StructEmbedding::Builder {
+class Field::Embedding::Builder {
 public:
-  typedef StructEmbedding Builds;
+  typedef Embedding Builds;
 
   Builder() = delete;  // Deleted to discourage incorrect usage.
                        // You can explicitly initialize to nullptr instead.
@@ -1933,14 +1944,11 @@ public:
   inline ::kj::StringTree toString() const { return asReader().toString(); }
 #endif  // !CAPNP_LITE
 
-  inline Which which();
-  inline bool isNoWidth();
-  inline  ::capnp::Void getNoWidth();
-  inline void setNoWidth( ::capnp::Void value = ::capnp::VOID);
+  inline  ::uint32_t getArrayLength();
+  inline void setArrayLength( ::uint32_t value);
 
-  inline bool isWidth();
-  inline  ::uint16_t getWidth();
-  inline void setWidth( ::uint16_t value);
+  inline  ::uint16_t getStructWidth();
+  inline void setStructWidth( ::uint16_t value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -1952,9 +1960,9 @@ private:
 };
 
 #if !CAPNP_LITE
-class Field::StructEmbedding::Pipeline {
+class Field::Embedding::Pipeline {
 public:
-  typedef StructEmbedding Pipelines;
+  typedef Embedding Pipelines;
 
   inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
@@ -1995,8 +2003,8 @@ public:
 
   inline bool getHadExplicitDefault() const;
 
-  inline bool hasStructEmbedding() const;
-  inline  ::capnp::schema::Field::StructEmbedding::Reader getStructEmbedding() const;
+  inline bool hasEmbedding() const;
+  inline  ::capnp::schema::Field::Embedding::Reader getEmbedding() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -2046,12 +2054,12 @@ public:
   inline bool getHadExplicitDefault();
   inline void setHadExplicitDefault(bool value);
 
-  inline bool hasStructEmbedding();
-  inline  ::capnp::schema::Field::StructEmbedding::Builder getStructEmbedding();
-  inline void setStructEmbedding( ::capnp::schema::Field::StructEmbedding::Reader value);
-  inline  ::capnp::schema::Field::StructEmbedding::Builder initStructEmbedding();
-  inline void adoptStructEmbedding(::capnp::Orphan< ::capnp::schema::Field::StructEmbedding>&& value);
-  inline ::capnp::Orphan< ::capnp::schema::Field::StructEmbedding> disownStructEmbedding();
+  inline bool hasEmbedding();
+  inline  ::capnp::schema::Field::Embedding::Builder getEmbedding();
+  inline void setEmbedding( ::capnp::schema::Field::Embedding::Reader value);
+  inline  ::capnp::schema::Field::Embedding::Builder initEmbedding();
+  inline void adoptEmbedding(::capnp::Orphan< ::capnp::schema::Field::Embedding>&& value);
+  inline ::capnp::Orphan< ::capnp::schema::Field::Embedding> disownEmbedding();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -2073,7 +2081,7 @@ public:
 
   inline  ::capnp::schema::Type::Pipeline getType();
   inline  ::capnp::schema::Value::Pipeline getDefaultValue();
-  inline  ::capnp::schema::Field::StructEmbedding::Pipeline getStructEmbedding();
+  inline  ::capnp::schema::Field::Embedding::Pipeline getEmbedding();
 private:
   ::capnp::AnyPointer::Pipeline _typeless;
   friend class ::capnp::PipelineHook;
@@ -2641,6 +2649,9 @@ public:
   inline bool isAnyPointer() const;
   inline typename AnyPointer::Reader getAnyPointer() const;
 
+  inline bool isEmbedding() const;
+  inline typename Embedding::Reader getEmbedding() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -2745,6 +2756,10 @@ public:
   inline bool isAnyPointer();
   inline typename AnyPointer::Builder getAnyPointer();
   inline typename AnyPointer::Builder initAnyPointer();
+
+  inline bool isEmbedding();
+  inline typename Embedding::Builder getEmbedding();
+  inline typename Embedding::Builder initEmbedding();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -3459,6 +3474,93 @@ public:
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
       : _typeless(kj::mv(typeless)) {}
 
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class Type::Embedding::Reader {
+public:
+  typedef Embedding Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint64_t getTypeId() const;
+
+  inline bool hasBrand() const;
+  inline  ::capnp::schema::Brand::Reader getBrand() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class Type::Embedding::Builder {
+public:
+  typedef Embedding Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline  ::uint64_t getTypeId();
+  inline void setTypeId( ::uint64_t value);
+
+  inline bool hasBrand();
+  inline  ::capnp::schema::Brand::Builder getBrand();
+  inline void setBrand( ::capnp::schema::Brand::Reader value);
+  inline  ::capnp::schema::Brand::Builder initBrand();
+  inline void adoptBrand(::capnp::Orphan< ::capnp::schema::Brand>&& value);
+  inline ::capnp::Orphan< ::capnp::schema::Brand> disownBrand();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class Type::Embedding::Pipeline {
+public:
+  typedef Embedding Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::capnp::schema::Brand::Pipeline getBrand();
 private:
   ::capnp::AnyPointer::Pipeline _typeless;
   friend class ::capnp::PipelineHook;
@@ -5668,65 +5770,32 @@ inline typename Field::Ordinal::Builder Field::Builder::initOrdinal() {
   _builder.setDataField< ::uint16_t>(::capnp::bounded<6>() * ::capnp::ELEMENTS, 0);
   return typename Field::Ordinal::Builder(_builder);
 }
-inline  ::capnp::schema::Field::StructEmbedding::Which Field::StructEmbedding::Reader::which() const {
-  return _reader.getDataField<Which>(
-      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
-}
-inline  ::capnp::schema::Field::StructEmbedding::Which Field::StructEmbedding::Builder::which() {
-  return _builder.getDataField<Which>(
+inline  ::uint32_t Field::Embedding::Reader::getArrayLength() const {
+  return _reader.getDataField< ::uint32_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
 }
 
-inline bool Field::StructEmbedding::Reader::isNoWidth() const {
-  return which() == Field::StructEmbedding::NO_WIDTH;
-}
-inline bool Field::StructEmbedding::Builder::isNoWidth() {
-  return which() == Field::StructEmbedding::NO_WIDTH;
-}
-inline  ::capnp::Void Field::StructEmbedding::Reader::getNoWidth() const {
-  KJ_IREQUIRE((which() == Field::StructEmbedding::NO_WIDTH),
-              "Must check which() before get()ing a union member.");
-  return _reader.getDataField< ::capnp::Void>(
+inline  ::uint32_t Field::Embedding::Builder::getArrayLength() {
+  return _builder.getDataField< ::uint32_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
 }
-
-inline  ::capnp::Void Field::StructEmbedding::Builder::getNoWidth() {
-  KJ_IREQUIRE((which() == Field::StructEmbedding::NO_WIDTH),
-              "Must check which() before get()ing a union member.");
-  return _builder.getDataField< ::capnp::Void>(
-      ::capnp::bounded<0>() * ::capnp::ELEMENTS);
-}
-inline void Field::StructEmbedding::Builder::setNoWidth( ::capnp::Void value) {
-  _builder.setDataField<Field::StructEmbedding::Which>(
-      ::capnp::bounded<0>() * ::capnp::ELEMENTS, Field::StructEmbedding::NO_WIDTH);
-  _builder.setDataField< ::capnp::Void>(
+inline void Field::Embedding::Builder::setArrayLength( ::uint32_t value) {
+  _builder.setDataField< ::uint32_t>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
 }
 
-inline bool Field::StructEmbedding::Reader::isWidth() const {
-  return which() == Field::StructEmbedding::WIDTH;
-}
-inline bool Field::StructEmbedding::Builder::isWidth() {
-  return which() == Field::StructEmbedding::WIDTH;
-}
-inline  ::uint16_t Field::StructEmbedding::Reader::getWidth() const {
-  KJ_IREQUIRE((which() == Field::StructEmbedding::WIDTH),
-              "Must check which() before get()ing a union member.");
+inline  ::uint16_t Field::Embedding::Reader::getStructWidth() const {
   return _reader.getDataField< ::uint16_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
 }
 
-inline  ::uint16_t Field::StructEmbedding::Builder::getWidth() {
-  KJ_IREQUIRE((which() == Field::StructEmbedding::WIDTH),
-              "Must check which() before get()ing a union member.");
+inline  ::uint16_t Field::Embedding::Builder::getStructWidth() {
   return _builder.getDataField< ::uint16_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
 }
-inline void Field::StructEmbedding::Builder::setWidth( ::uint16_t value) {
-  _builder.setDataField<Field::StructEmbedding::Which>(
-      ::capnp::bounded<0>() * ::capnp::ELEMENTS, Field::StructEmbedding::WIDTH);
+inline void Field::Embedding::Builder::setStructWidth( ::uint16_t value) {
   _builder.setDataField< ::uint16_t>(
-      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::uint32_t Field::Slot::Reader::getOffset() const {
@@ -5835,42 +5904,42 @@ inline void Field::Slot::Builder::setHadExplicitDefault(bool value) {
       ::capnp::bounded<128>() * ::capnp::ELEMENTS, value);
 }
 
-inline bool Field::Slot::Reader::hasStructEmbedding() const {
+inline bool Field::Slot::Reader::hasEmbedding() const {
   return !_reader.getPointerField(
       ::capnp::bounded<4>() * ::capnp::POINTERS).isNull();
 }
-inline bool Field::Slot::Builder::hasStructEmbedding() {
+inline bool Field::Slot::Builder::hasEmbedding() {
   return !_builder.getPointerField(
       ::capnp::bounded<4>() * ::capnp::POINTERS).isNull();
 }
-inline  ::capnp::schema::Field::StructEmbedding::Reader Field::Slot::Reader::getStructEmbedding() const {
-  return ::capnp::_::PointerHelpers< ::capnp::schema::Field::StructEmbedding>::get(_reader.getPointerField(
+inline  ::capnp::schema::Field::Embedding::Reader Field::Slot::Reader::getEmbedding() const {
+  return ::capnp::_::PointerHelpers< ::capnp::schema::Field::Embedding>::get(_reader.getPointerField(
       ::capnp::bounded<4>() * ::capnp::POINTERS));
 }
-inline  ::capnp::schema::Field::StructEmbedding::Builder Field::Slot::Builder::getStructEmbedding() {
-  return ::capnp::_::PointerHelpers< ::capnp::schema::Field::StructEmbedding>::get(_builder.getPointerField(
+inline  ::capnp::schema::Field::Embedding::Builder Field::Slot::Builder::getEmbedding() {
+  return ::capnp::_::PointerHelpers< ::capnp::schema::Field::Embedding>::get(_builder.getPointerField(
       ::capnp::bounded<4>() * ::capnp::POINTERS));
 }
 #if !CAPNP_LITE
-inline  ::capnp::schema::Field::StructEmbedding::Pipeline Field::Slot::Pipeline::getStructEmbedding() {
-  return  ::capnp::schema::Field::StructEmbedding::Pipeline(_typeless.getPointerField(4));
+inline  ::capnp::schema::Field::Embedding::Pipeline Field::Slot::Pipeline::getEmbedding() {
+  return  ::capnp::schema::Field::Embedding::Pipeline(_typeless.getPointerField(4));
 }
 #endif  // !CAPNP_LITE
-inline void Field::Slot::Builder::setStructEmbedding( ::capnp::schema::Field::StructEmbedding::Reader value) {
-  ::capnp::_::PointerHelpers< ::capnp::schema::Field::StructEmbedding>::set(_builder.getPointerField(
+inline void Field::Slot::Builder::setEmbedding( ::capnp::schema::Field::Embedding::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::schema::Field::Embedding>::set(_builder.getPointerField(
       ::capnp::bounded<4>() * ::capnp::POINTERS), value);
 }
-inline  ::capnp::schema::Field::StructEmbedding::Builder Field::Slot::Builder::initStructEmbedding() {
-  return ::capnp::_::PointerHelpers< ::capnp::schema::Field::StructEmbedding>::init(_builder.getPointerField(
+inline  ::capnp::schema::Field::Embedding::Builder Field::Slot::Builder::initEmbedding() {
+  return ::capnp::_::PointerHelpers< ::capnp::schema::Field::Embedding>::init(_builder.getPointerField(
       ::capnp::bounded<4>() * ::capnp::POINTERS));
 }
-inline void Field::Slot::Builder::adoptStructEmbedding(
-    ::capnp::Orphan< ::capnp::schema::Field::StructEmbedding>&& value) {
-  ::capnp::_::PointerHelpers< ::capnp::schema::Field::StructEmbedding>::adopt(_builder.getPointerField(
+inline void Field::Slot::Builder::adoptEmbedding(
+    ::capnp::Orphan< ::capnp::schema::Field::Embedding>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::schema::Field::Embedding>::adopt(_builder.getPointerField(
       ::capnp::bounded<4>() * ::capnp::POINTERS), kj::mv(value));
 }
-inline ::capnp::Orphan< ::capnp::schema::Field::StructEmbedding> Field::Slot::Builder::disownStructEmbedding() {
-  return ::capnp::_::PointerHelpers< ::capnp::schema::Field::StructEmbedding>::disown(_builder.getPointerField(
+inline ::capnp::Orphan< ::capnp::schema::Field::Embedding> Field::Slot::Builder::disownEmbedding() {
+  return ::capnp::_::PointerHelpers< ::capnp::schema::Field::Embedding>::disown(_builder.getPointerField(
       ::capnp::bounded<4>() * ::capnp::POINTERS));
 }
 
@@ -6794,6 +6863,29 @@ inline typename Type::AnyPointer::Builder Type::Builder::initAnyPointer() {
   _builder.setDataField< ::uint64_t>(::capnp::bounded<2>() * ::capnp::ELEMENTS, 0);
   return typename Type::AnyPointer::Builder(_builder);
 }
+inline bool Type::Reader::isEmbedding() const {
+  return which() == Type::EMBEDDING;
+}
+inline bool Type::Builder::isEmbedding() {
+  return which() == Type::EMBEDDING;
+}
+inline typename Type::Embedding::Reader Type::Reader::getEmbedding() const {
+  KJ_IREQUIRE((which() == Type::EMBEDDING),
+              "Must check which() before get()ing a union member.");
+  return typename Type::Embedding::Reader(_reader);
+}
+inline typename Type::Embedding::Builder Type::Builder::getEmbedding() {
+  KJ_IREQUIRE((which() == Type::EMBEDDING),
+              "Must check which() before get()ing a union member.");
+  return typename Type::Embedding::Builder(_builder);
+}
+inline typename Type::Embedding::Builder Type::Builder::initEmbedding() {
+  _builder.setDataField<Type::Which>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, Type::EMBEDDING);
+  _builder.setDataField< ::uint64_t>(::capnp::bounded<1>() * ::capnp::ELEMENTS, 0);
+  _builder.getPointerField(::capnp::bounded<0>() * ::capnp::POINTERS).clear();
+  return typename Type::Embedding::Builder(_builder);
+}
 inline bool Type::List::Reader::hasElementType() const {
   return !_reader.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
@@ -7221,6 +7313,59 @@ inline  ::uint16_t Type::AnyPointer::ImplicitMethodParameter::Builder::getParame
 inline void Type::AnyPointer::ImplicitMethodParameter::Builder::setParameterIndex( ::uint16_t value) {
   _builder.setDataField< ::uint16_t>(
       ::capnp::bounded<5>() * ::capnp::ELEMENTS, value);
+}
+
+inline  ::uint64_t Type::Embedding::Reader::getTypeId() const {
+  return _reader.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t Type::Embedding::Builder::getTypeId() {
+  return _builder.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void Type::Embedding::Builder::setTypeId( ::uint64_t value) {
+  _builder.setDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+}
+
+inline bool Type::Embedding::Reader::hasBrand() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool Type::Embedding::Builder::hasBrand() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::schema::Brand::Reader Type::Embedding::Reader::getBrand() const {
+  return ::capnp::_::PointerHelpers< ::capnp::schema::Brand>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::capnp::schema::Brand::Builder Type::Embedding::Builder::getBrand() {
+  return ::capnp::_::PointerHelpers< ::capnp::schema::Brand>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::capnp::schema::Brand::Pipeline Type::Embedding::Pipeline::getBrand() {
+  return  ::capnp::schema::Brand::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void Type::Embedding::Builder::setBrand( ::capnp::schema::Brand::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::schema::Brand>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::capnp::schema::Brand::Builder Type::Embedding::Builder::initBrand() {
+  return ::capnp::_::PointerHelpers< ::capnp::schema::Brand>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void Type::Embedding::Builder::adoptBrand(
+    ::capnp::Orphan< ::capnp::schema::Brand>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::schema::Brand>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::schema::Brand> Type::Embedding::Builder::disownBrand() {
+  return ::capnp::_::PointerHelpers< ::capnp::schema::Brand>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
 inline bool Brand::Reader::hasScopes() const {

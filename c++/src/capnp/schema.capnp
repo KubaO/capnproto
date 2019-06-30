@@ -228,7 +228,6 @@ struct Field {
       # resides.  E.g. for a UInt32 field, multiply this by 4 to get the byte offset from the
       # beginning of the data section.
 
-      structEmbedding @11 :StructEmbedding;
       type @5 :Type;
       defaultValue @6 :Value;
 
@@ -237,6 +236,10 @@ struct Field {
       # zero or empty values.  Usually, whether the default value was explicit shouldn't matter.
       # The main use case for this flag is for structs representing method parameters:
       # explicitly-defaulted parameters may be allowed to be omitted when calling the method.
+
+      embedding @11 :Embedding;
+      # An embedding of a type in a slot. Embeddings allow repeating any type (arrays), and including
+      # fragments of structs verbatim (embedded struct).
     }
 
     group :group {
@@ -256,17 +259,19 @@ struct Field {
     # the compiled version -- i.e. so that `capnp compile -ocapnp` can do its job.
   }
 
-  struct StructEmbedding {
-    # Schema for an embedding of a structure in a field
+  struct Embedding {
+    # Schema for an embedding of a type within a field. Array embeddings repeat the instance of
+    # the underlying type. Struct embeddings select a number of fields from a structure and
+    # include them verbatim. An embedding may be an array of struct embeddings as well.
+    # The struct embeddings aren't transitively flattening, i.e. if an embedded struct has pointer
+    # type fields, those pointers will end up in the pointer area.
+    
+    arrayLength @0 :UInt32;
+    # The number of times a given type is repeated.
 
-    union {
-      noWidth @0 :Void;
-      # An embedding without a width
-
-      width @1 :UInt16;
-      # The width of the embedding: ordinals up to width-1 are embedded from the
-      # structure type of this field.
-    }
+    structWidth @1 :UInt16;
+    # The number of fields included from a struct. The structure type is converted from a
+    # pointer type to a "scalar" type.
   }
 }
 
@@ -357,6 +362,10 @@ struct Type {
     interface :group {
       typeId @17 :Id;
       brand @23 :Brand;
+    }
+    embedding :group {
+      typeId @28 :Id;
+      brand @29 :Brand;
     }
 
     anyPointer :union {

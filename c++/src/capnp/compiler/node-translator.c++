@@ -2237,7 +2237,8 @@ private:
                               embeddableWidth, ")."));
                   }
                 } else {
-                  builder.setNoWidth();
+                  errorReporter.addErrorOn(member.fieldStructEmbedding,
+                      "An embedding must have a width.");
                 }
                 break;
               }

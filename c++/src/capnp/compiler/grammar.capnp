@@ -123,13 +123,11 @@ struct Declaration {
     ordinal @3 :LocatedInteger;  # limited to 16 bits
   }
 
-  struct StructEmbedding {
+  struct Embedding {
     startByte @0 :UInt32;
     endByte @1 :UInt32;
-    union {
-      noWidth @2 :Void;
-      width @3 :LocatedInteger;  # limited to 16 bits, since it's the embedding's end ordinal
-    }
+    arrayLength @2 :LocatedInteger;
+    structWidth @3 :LocatedInteger; # limited to 16 bits, since it's the embeddied struct's end ordinal
   }
 
   parameters @57 :List(BrandParameter);
@@ -180,7 +178,7 @@ struct Declaration {
         none @17 :Void;
         value @18 :Expression;
       }
-      structEmbedding @61 :StructEmbedding;
+      embedding @61 :Embedding;
     }
     union @19 :Void;
     group @20 :Void;
