@@ -33,6 +33,8 @@ struct Token {
     integerLiteral @2 :UInt64;
     floatLiteral @3 :Float64;
     operator @4 :Text;
+    arrayLength @10 :UInt64;
+    structWidth @11 :UInt64;
     parenthesizedList @5 :List(List(Token));
     bracketedList @6 :List(List(Token));
   }

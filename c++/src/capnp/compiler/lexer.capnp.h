@@ -40,6 +40,8 @@ struct Token {
     PARENTHESIZED_LIST,
     BRACKETED_LIST,
     BINARY_LITERAL,
+    ARRAY_LENGTH,
+    STRUCT_WIDTH,
   };
 
   struct _capnpPrivate {
@@ -153,6 +155,12 @@ public:
   inline bool hasBinaryLiteral() const;
   inline  ::capnp::Data::Reader getBinaryLiteral() const;
 
+  inline bool isArrayLength() const;
+  inline  ::uint64_t getArrayLength() const;
+
+  inline bool isStructWidth() const;
+  inline  ::uint64_t getStructWidth() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -245,6 +253,14 @@ public:
   inline  ::capnp::Data::Builder initBinaryLiteral(unsigned int size);
   inline void adoptBinaryLiteral(::capnp::Orphan< ::capnp::Data>&& value);
   inline ::capnp::Orphan< ::capnp::Data> disownBinaryLiteral();
+
+  inline bool isArrayLength();
+  inline  ::uint64_t getArrayLength();
+  inline void setArrayLength( ::uint64_t value);
+
+  inline bool isStructWidth();
+  inline  ::uint64_t getStructWidth();
+  inline void setStructWidth( ::uint64_t value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -981,6 +997,58 @@ inline ::capnp::Orphan< ::capnp::Data> Token::Builder::disownBinaryLiteral() {
               "Must check which() before get()ing a union member.");
   return ::capnp::_::PointerHelpers< ::capnp::Data>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool Token::Reader::isArrayLength() const {
+  return which() == Token::ARRAY_LENGTH;
+}
+inline bool Token::Builder::isArrayLength() {
+  return which() == Token::ARRAY_LENGTH;
+}
+inline  ::uint64_t Token::Reader::getArrayLength() const {
+  KJ_IREQUIRE((which() == Token::ARRAY_LENGTH),
+              "Must check which() before get()ing a union member.");
+  return _reader.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t Token::Builder::getArrayLength() {
+  KJ_IREQUIRE((which() == Token::ARRAY_LENGTH),
+              "Must check which() before get()ing a union member.");
+  return _builder.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void Token::Builder::setArrayLength( ::uint64_t value) {
+  _builder.setDataField<Token::Which>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, Token::ARRAY_LENGTH);
+  _builder.setDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+}
+
+inline bool Token::Reader::isStructWidth() const {
+  return which() == Token::STRUCT_WIDTH;
+}
+inline bool Token::Builder::isStructWidth() {
+  return which() == Token::STRUCT_WIDTH;
+}
+inline  ::uint64_t Token::Reader::getStructWidth() const {
+  KJ_IREQUIRE((which() == Token::STRUCT_WIDTH),
+              "Must check which() before get()ing a union member.");
+  return _reader.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline  ::uint64_t Token::Builder::getStructWidth() {
+  KJ_IREQUIRE((which() == Token::STRUCT_WIDTH),
+              "Must check which() before get()ing a union member.");
+  return _builder.getDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void Token::Builder::setStructWidth( ::uint64_t value) {
+  _builder.setDataField<Token::Which>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, Token::STRUCT_WIDTH);
+  _builder.setDataField< ::uint64_t>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
 }
 
 inline  ::capnp::compiler::Statement::Which Statement::Reader::which() const {

@@ -205,20 +205,38 @@ Lexer::Lexer(Orphanage orphanageParam, ErrorReporter& errorReporter)
             return t;
           }),
       p::transformWithLocation(
-          p::charsToString(p::oneOrMore(p::anyOfChars("!$%&*+-./:<=>?@^|~"))),
+          p::oneOf(
+              p::charToString(p::anyOfChars("!$%&*+./:=?@^|~")),
+              p::charToString(p::sequence(p::exactChar<'-'>(), p::notLookingAt(p::exactChar<'>'>()))),
+//              p::charToString(p::sequence(p::exactChar<'<'>(), p::notLookingAt(p::sequence(p::integer, p::exactChar<'>'>())))),
+        #if 1
+              p::constResult(p::sequence(p::exactChar<'-'>(), p::notLookingAt(p::exactChar<'>'>())), kj::StringPtr("-")),
+              p::anyToString(p::sequence(p::exactChar<'<'>(), p::notLookingAt(p::sequence(p::integer, p::exactChar<'>'>()))), "<"),
+        #endif
+              p::anyToString(p::exactString("->"), "->")),
           [this](Location loc, kj::String text) -> Orphan<Token> {
             auto t = orphanage.newOrphan<Token>();
             initTok(t, loc).setOperator(text);
             return t;
           }),
+#if 0
       p::transformWithLocation(
-          sequence(p::exactChar<'('>(), commaDelimitedList, p::exactChar<')'>()),
-          [this](Location loc, kj::Array<kj::Array<Orphan<Token>>>&& items) -> Orphan<Token> {
+          sequence(p::exactChar<'['>(), p::integer, p::exactChar<']'>()),
+          [this](Location loc, uint64_t n) -> Orphan<Token> {
             auto t = orphanage.newOrphan<Token>();
-            buildTokenSequenceList(
-                initTok(t, loc).initParenthesizedList(items.size()), kj::mv(items));
+            initTok(t, loc).setArrayLength(n);
             return t;
           }),
+#endif
+#if 0
+      p::transformWithLocation(
+          sequence(p::exactChar<'<'>(), p::integer, p::exactChar<'>'>()),
+          [this](Location loc, uint64_t w) -> Orphan<Token> {
+            auto t = orphanage.newOrphan<Token>();
+            initTok(t, loc).setStructWidth(w);
+            return t;
+          }),
+#endif
       p::transformWithLocation(
           sequence(p::exactChar<'['>(), commaDelimitedList, p::exactChar<']'>()),
           [this](Location loc, kj::Array<kj::Array<Orphan<Token>>>&& items) -> Orphan<Token> {

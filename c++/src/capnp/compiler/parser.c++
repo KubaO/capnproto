@@ -185,6 +185,8 @@ constexpr auto binaryLiteral = TOKEN_TYPE_PARSER(Data::Reader, BINARY_LITERAL, g
 constexpr auto integerLiteral = TOKEN_TYPE_PARSER(uint64_t, INTEGER_LITERAL, getIntegerLiteral);
 constexpr auto floatLiteral = TOKEN_TYPE_PARSER(double, FLOAT_LITERAL, getFloatLiteral);
 constexpr auto operatorToken = TOKEN_TYPE_PARSER(Text::Reader, OPERATOR, getOperator);
+constexpr auto arrayLength = TOKEN_TYPE_PARSER(uint64_t, INTEGER_LITERAL, getArrayLength);
+constexpr auto structWidth = TOKEN_TYPE_PARSER(uint64_t, INTEGER_LITERAL, getStructWidth);
 constexpr auto rawParenthesizedList =
     TOKEN_TYPE_PARSER(List<List<Token>>::Reader, PARENTHESIZED_LIST, getParenthesizedList);
 constexpr auto rawBracketedList =
@@ -605,16 +607,17 @@ CapnpParser::CapnpParser(Orphanage orphanageParam, ErrorReporter& errorReporterP
       }));
 
   // FIXME: This is parser abuse. Lexer should learn to deal with these.
+  /*
   parsers.embedding = arena.copy(p::transformWithLocation(
+#if 0
       p::oneOf(
           p::sequence(op("["), integerLiteral, op("]"),
-                      p::optional(p::sequence(op("<"), integerLiteral, op(">")))),
+              p::optional(p::sequence(op("<"), integerLiteral, op(">")))),
           p::sequence(p::optional(p::sequence(op("["), integerLiteral, op("]"))),
-                      op("<"), integerLiteral, op(">"))),
-#if 0
-      p::sequence(
-          p::optional(p::sequence(op("["), integerLiteral, op("]"))),
-          p::optional(p::sequence(op("<"), integerLiteral, op(">")))),
+              op("<"), integerLiteral, op(">"))),
+#endif
+#if 1
+      p::sequence(p::optional(integerLiteral), p::optional(integerLiteral)),
 #endif
       [this](kj::parse::Span<List<Token>::Reader::Iterator> location,
              kj::Maybe<Located<uint64_t>>&& length, kj::Maybe<Located<uint64_t>>&& width)
@@ -639,7 +642,7 @@ CapnpParser::CapnpParser(Orphanage orphanageParam, ErrorReporter& errorReporterP
         }
         return result;
       }));
-
+*/
   // -----------------------------------------------------------------
 
   parsers.usingDecl = arena.copy(p::transform(
@@ -721,8 +724,7 @@ CapnpParser::CapnpParser(Orphanage orphanageParam, ErrorReporter& errorReporterP
       }));
 
   parsers.fieldDecl = arena.copy(p::transform(
-      p::sequence(identifier, parsers.ordinal,
-                  p::optional(parsers.embedding),
+      p::sequence(identifier, parsers.ordinal, parsers.embedding,
                   op(":"), parsers.expression,
                   p::optional(p::sequence(op("="), parsers.expression)),
                   p::many(parsers.annotation)),
@@ -735,8 +737,8 @@ CapnpParser::CapnpParser(Orphanage orphanageParam, ErrorReporter& errorReporterP
         auto builder =
             initMemberDecl(decl.get(), kj::mv(name), kj::mv(ordinal), kj::mv(annotations))
                 .initField();
-        KJ_IF_MAYBE(e, embedding) {
-          builder.adoptEmbedding(kj::mv(*e));
+        KJ_IF_MAYBE(emb, embedding) {
+          builder.adoptEmbedding(kj::mv(*emb));
         }
         builder.adoptType(kj::mv(type));
         KJ_IF_MAYBE(val, defaultValue) {

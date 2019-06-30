@@ -1807,8 +1807,8 @@ private:
     Declaration::Id::Reader declId;
     Declaration::Which declKind;
     bool isParam = false;
-    bool hasStructEmbedding = false;
-    Declaration::StructEmbedding::Reader fieldStructEmbedding; // if declKind == FIELD && hasStuctEmbedding
+    bool hasEmbedding = false;
+    Declaration::Embedding::Reader fieldEmbedding; // if declKind == FIELD && hasEmbedding
     bool hasDefaultValue = false;               // if declKind == FIELD
     Expression::Reader fieldType;               // if declKind == FIELD
     Expression::Reader fieldDefaultValue;       // if declKind == FIELD && hasDefaultValue
@@ -1854,9 +1854,9 @@ private:
           node(nullptr), sourceInfo(nullptr), fieldScope(&fieldScope) {
       KJ_REQUIRE(decl.which() == Declaration::FIELD);
       auto fieldDecl = decl.getField();
-      hasStructEmbedding = fieldDecl.hasStructEmbedding();
-      if (hasStructEmbedding) {
-        fieldStructEmbedding = fieldDecl.getStructEmbedding();
+      hasEmbedding = fieldDecl.hasEmbedding();
+      if (hasEmbedding) {
+        fieldEmbedding = fieldDecl.getEmbedding();
       }
       fieldType = fieldDecl.getType();
       if (fieldDecl.getDefaultValue().isValue()) {
@@ -2211,41 +2211,58 @@ private:
             translator.compileDefaultDefaultValue(typeBuilder, slot.initDefaultValue());
           }
 
-          if (member.hasStructEmbedding) {
-            switch (typeBuilder.which()) {
-              case schema::Type::STRUCT: {
-                auto &embedding = member.fieldStructEmbedding;
+          uint embeddingLength = 0;
+          uint embeddingWidth = 0;
+          uint embeddingStructDataWordCount = 0;
+          uint embeddingStructPointerCount = 0;
+          if (member.hasEmbedding) {
+            auto &embedding = member.fieldEmbedding;
+            uint embeddableWidth = [&]{
+              if (typeBuilder.isStruct()) {
                 auto typeId = typeBuilder.getStruct().getTypeId();
                 auto embeddedSchema = translator.resolver.resolveFinalSchema(typeId);
-                uint embeddableWidth = 0;
-                KJ_IF_MAYBE(schema, embeddedSchema) {
-                  if (schema->isStruct()) {
-                    embeddableWidth = schema->getStruct().getFields().size();
-                  }
-                }
-                auto builder = slot.initStructEmbedding();
-                if (embedding.hasWidth()) {
-                  auto embeddedWidth = embedding.getWidth().getValue();
-                  if (embeddedWidth > 0 && embeddedWidth <= embeddableWidth) {
-                    builder.setWidth(embeddedWidth);
+                auto schema = KJ_REQUIRE_NONNULL(embeddedSchema, "A structure-typed field's type doesn't have a resolvable schema.");
+                KJ_REQUIRE(schema.isStruct(), "A structure-typed field's type is doesn't resolve to a structure type.");
+                auto structSchema = schema.getStruct();
+                embeddingStructDataWordCount = structSchema.getDataWordCount();
+                embeddingStructPointerCount = structSchema.getPointerCount();
+                return structSchema.getFields().size();
+              } else {
+                return 0U;
+              }
+            }();
+            auto builder = slot.initEmbedding();
+            if (embedding.hasArrayLength()) {
+              auto length = embedding.getArrayLength().getValue();
+              if (length > 0) {
+                builder.setArrayLength(embedding.getArrayLength().getValue());
+              } else {
+                errorReporter.addErrorOn(embedding.getArrayLength(),
+                    "The array length must be greater than zero.");
+              }
+            }
+            if (embedding.hasStructWidth()) {
+              auto embeddedWidth = embedding.getStructWidth().getValue();
+              if (embeddableWidth > 0) {
+                if (embeddedWidth > 0) {
+                  if (embeddedWidth <= embeddableWidth) {
+                    builder.setStructWidth(embeddedWidth);
                   } else {
-                    errorReporter.addErrorOn(embedding,
-                        embeddedWidth <= 0
-                        ? kj::str("The embedded width must be greater than zero.")
-                        : kj::str("The embedded width (", embeddedWidth,
-                              ") is larger than the width of the structure being embedded (",
-                              embeddableWidth, ")."));
+                    errorReporter.addErrorOn(embedding.getStructWidth(),
+                        kj::str("The embedded width (", embeddedWidth,
+                            ") is larger than the width of the structure being embedded (",
+                            embeddableWidth, ")."));
                   }
                 } else {
-                  errorReporter.addErrorOn(member.fieldStructEmbedding,
-                      "An embedding must have a width.");
+                  errorReporter.addErrorOn(embedding,
+                      "The embedded width must be greater than zero.");
                 }
-                break;
+              } else {
+                errorReporter.addErrorOn(embedding.getStructWidth(),
+                      "Only structure-typed fields may have an embedded width.");
               }
-              default:
-                errorReporter.addErrorOn(member.fieldStructEmbedding,
-                    "Only structs can be embedded.");
-                break;
+            } else {
+              errorReporter.addErrorOn(member.fieldEmbedding, "An embedding must have a width.");
             }
           }
 

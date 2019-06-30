@@ -274,7 +274,7 @@ constexpr ExactlyConst_<T, expected> exactlyConst() {
 // -------------------------------------------------------------------
 // constResult()
 
-template <typename SubParser, typename Result>
+template <typename SubParser, typename ResultFrom, typename MakeResult = decltype([](const ResultFrom &from){})>
 class ConstResult_ {
 public:
   explicit constexpr ConstResult_(SubParser&& subParser, Result&& result)
@@ -285,17 +285,17 @@ public:
     if (subParser(input) == nullptr) {
       return nullptr;
     } else {
-      return result;
+      return MakeResult(result);
     }
   }
 
 private:
   SubParser subParser;
-  Result result;
+  ResultFrom result;
 };
 
-template <typename SubParser, typename Result>
-constexpr ConstResult_<SubParser, Result> constResult(SubParser&& subParser, Result&& result) {
+template <typename SubParser, typename Result, typename ResultFrom = result>
+constexpr ConstResult_<SubParser, Result, ResultFrom> constResult(SubParser&& subParser, Result&& result) {
   // Constructs a parser which returns exactly `result` if `subParser` is successful.
   return ConstResult_<SubParser, Result>(kj::fwd<SubParser>(subParser), kj::fwd<Result>(result));
 }

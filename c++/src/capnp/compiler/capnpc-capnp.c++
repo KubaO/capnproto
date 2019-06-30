@@ -465,9 +465,10 @@ private:
         int size = typeSizeBits(slot.getType());
         return kj::strTree(
             indent, proto.getName(), " @", proto.getOrdinal().getExplicit(),
-            slot.hasStructEmbedding() ? kj::strTree(" <", slot.getStructEmbedding().isWidth() ? kj::strTree(slot.getStructEmbedding().getWidth())
-                                                                                              : kj::strTree(" "), ">")
-                                      : kj::strTree(),
+            (slot.hasEmbedding() && slot.getEmbedding().getArrayLength() > 0)
+                ? kj::strTree(" [", slot.getEmbedding().getArrayLength(), "]") : kj::strTree(),
+            (slot.hasEmbedding() && slot.getEmbedding().getStructWidth() > 0)
+                ? kj::strTree(" <", slot.getEmbedding().getStructWidth(), ">") : kj::strTree(),
             " :", genType(slot.getType(), scope, nullptr),
             isEmptyValue(slot.getDefaultValue()) ? kj::strTree("") :
                 kj::strTree(" = ", genValue(field.getType(), slot.getDefaultValue())),

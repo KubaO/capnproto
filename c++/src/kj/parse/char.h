@@ -63,12 +63,52 @@ constexpr inline ExactString_ exactString(const char* str) {
   return ExactString_(str);
 }
 
+namespace _ {  // private
+
+class AnyToString {
+public:
+  constexpr inline AnyToString(const char* str): str(str) {}
+
+  String operator()() const {
+    return heapString(str);
+  }
+
+private:
+  const char *str;
+};
+
+}  // namespace _ (private)
+
+inline auto exactToString(const char* str) {
+  // Returns a parser that matches exactly the string given by the argument, and
+  // returns it as a result.
+  return transform(ExactString_(str), [str]() -> kj::String { return kj::heapString(str); });
+}
+
+template <char c>
+constexpr auto exactToString() {
+  // Returns a parser that matches exactly the character given by the template argument,
+  // and returns it as a result.
+  return transform(ExactlyConst_<char, c>(), []() -> kj::String {
+    char buf[2] = {c, '\0'};
+    return kj::heapString(buf);
+  });
+}
+
 template <char c>
 constexpr ExactlyConst_<char, c> exactChar() {
   // Returns a parser that matches exactly the character given by the template argument (returning
   // no result).
   return ExactlyConst_<char, c>();
 }
+
+template <typename SubParser>
+constexpr inline auto anyToString(SubParser&& subParser, const char* str)
+    -> decltype(transform(kj::fwd<SubParser>(subParser), _::AnyToString(str))) {
+  // Wraps a parser and returns a String upon success.
+  return parse::transform(kj::fwd<SubParser>(subParser), _::AnyToString(str));
+}
+
 
 // =======================================================================================
 // Char ranges / sets
@@ -184,6 +224,14 @@ struct ArrayToString {
   }
 };
 
+struct CharToString {
+  inline String operator()(char ch) const {
+    char buf[2] = {ch, '\0'};
+    return heapString(buf);
+  }
+  inline String operator()() const { return {}; }
+};
+
 }  // namespace _ (private)
 
 template <typename SubParser>
@@ -191,6 +239,13 @@ constexpr inline auto charsToString(SubParser&& subParser)
     -> decltype(transform(kj::fwd<SubParser>(subParser), _::ArrayToString())) {
   // Wraps a parser that returns Array<char> such that it returns String instead.
   return parse::transform(kj::fwd<SubParser>(subParser), _::ArrayToString());
+}
+
+template <typename SubParser>
+constexpr inline auto charToString(SubParser&& subParser)
+    -> decltype(transform(kj::fwd<SubParser>(subParser), _::CharToString())) {
+  // Wraps a parser that returns char such that it returns String instead.
+  return parse::transform(kj::fwd<SubParser>(subParser), _::CharToString());
 }
 
 // =======================================================================================
