@@ -1807,6 +1807,8 @@ private:
     Declaration::Id::Reader declId;
     Declaration::Which declKind;
     bool isParam = false;
+    bool hasStructEmbedding = false;
+    Declaration::StructEmbedding::Reader fieldStructEmbedding; // if declKind == FIELD && hasStuctEmbedding
     bool hasDefaultValue = false;               // if declKind == FIELD
     Expression::Reader fieldType;               // if declKind == FIELD
     Expression::Reader fieldDefaultValue;       // if declKind == FIELD && hasDefaultValue
@@ -1852,6 +1854,10 @@ private:
           node(nullptr), sourceInfo(nullptr), fieldScope(&fieldScope) {
       KJ_REQUIRE(decl.which() == Declaration::FIELD);
       auto fieldDecl = decl.getField();
+      hasStructEmbedding = fieldDecl.hasStructEmbedding();
+      if (hasStructEmbedding) {
+        fieldStructEmbedding = fieldDecl.getStructEmbedding();
+      }
       fieldType = fieldDecl.getType();
       if (fieldDecl.getDefaultValue().isValue()) {
         hasDefaultValue = true;
@@ -2203,6 +2209,24 @@ private:
             }
           } else {
             translator.compileDefaultDefaultValue(typeBuilder, slot.initDefaultValue());
+          }
+
+          if (member.hasStructEmbedding) {
+            switch (typeBuilder.which()) {
+              case schema::Type::STRUCT: {
+                auto builder = slot.initStructEmbedding();
+                if (member.fieldStructEmbedding.hasWidth()) {
+                  builder.setWidth(member.fieldStructEmbedding.getWidth().getValue());
+                } else if (member.fieldStructEmbedding.isNoWidth()) {
+                  builder.setNoWidth();
+                }
+                break;
+              }
+              default:
+                errorReporter.addErrorOn(member.fieldStructEmbedding,
+                    "Only structs can be embedded.");
+                break;
+            }
           }
 
           int lgSize = -1;

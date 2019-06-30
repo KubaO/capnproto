@@ -228,6 +228,7 @@ struct Field {
       # resides.  E.g. for a UInt32 field, multiply this by 4 to get the byte offset from the
       # beginning of the data section.
 
+      structEmbedding @11 :StructEmbedding;
       type @5 :Type;
       defaultValue @6 :Value;
 
@@ -253,6 +254,19 @@ struct Field {
     # a numeric identifier for a field, use its position within the field array for its scope.
     # The ordinal is given here mainly just so that the original schema text can be reproduced given
     # the compiled version -- i.e. so that `capnp compile -ocapnp` can do its job.
+  }
+
+  struct StructEmbedding {
+    # Schema for an embedding of a structure in a field
+
+    union {
+      noWidth @0 :Void;
+      # An embedding without a width
+
+      width @1 :UInt16;
+      # The width of the embedding: ordinals up to width-1 are embedded from the
+      # structure type of this field.
+    }
   }
 }
 

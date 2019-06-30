@@ -123,6 +123,15 @@ struct Declaration {
     ordinal @3 :LocatedInteger;  # limited to 16 bits
   }
 
+  struct StructEmbedding {
+    startByte @0 :UInt32;
+    endByte @1 :UInt32;
+    union {
+      noWidth @2 :Void;
+      width @3 :LocatedInteger;  # limited to 16 bits, since it's the embedding's end ordinal
+    }
+  }
+
   parameters @57 :List(BrandParameter);
   # If this node is parameterized (generic), the list of parameters. Empty for non-generic types.
 
@@ -171,6 +180,7 @@ struct Declaration {
         none @17 :Void;
         value @18 :Expression;
       }
+      structEmbedding @61 :StructEmbedding;
     }
     union @19 :Void;
     group @20 :Void;
