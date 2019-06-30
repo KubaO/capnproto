@@ -2214,10 +2214,29 @@ private:
           if (member.hasStructEmbedding) {
             switch (typeBuilder.which()) {
               case schema::Type::STRUCT: {
+                auto &embedding = member.fieldStructEmbedding;
+                auto typeId = typeBuilder.getStruct().getTypeId();
+                auto embeddedSchema = translator.resolver.resolveFinalSchema(typeId);
+                uint embeddableWidth = 0;
+                KJ_IF_MAYBE(schema, embeddedSchema) {
+                  if (schema->isStruct()) {
+                    embeddableWidth = schema->getStruct().getFields().size();
+                  }
+                }
                 auto builder = slot.initStructEmbedding();
-                if (member.fieldStructEmbedding.hasWidth()) {
-                  builder.setWidth(member.fieldStructEmbedding.getWidth().getValue());
-                } else if (member.fieldStructEmbedding.isNoWidth()) {
+                if (embedding.hasWidth()) {
+                  auto embeddedWidth = embedding.getWidth().getValue();
+                  if (embeddedWidth > 0 && embeddedWidth <= embeddableWidth) {
+                    builder.setWidth(embeddedWidth);
+                  } else {
+                    errorReporter.addErrorOn(embedding,
+                        embeddedWidth <= 0
+                        ? kj::str("The embedded width must be greater than zero.")
+                        : kj::str("The embedded width (", embeddedWidth,
+                              ") is larger than the width of the structure being embedded (",
+                              embeddableWidth, ")."));
+                  }
+                } else {
                   builder.setNoWidth();
                 }
                 break;
