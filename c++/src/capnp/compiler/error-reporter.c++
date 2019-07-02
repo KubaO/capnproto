@@ -64,5 +64,11 @@ GlobalErrorReporter::SourcePos LineBreakTable::toSourcePos(uint32_t byteOffset) 
   return GlobalErrorReporter::SourcePos { byteOffset, line, col };
 }
 
+void ErrorReport::reportTo(ErrorReporter &reporter) {
+  if (message.size() > 0) {
+    reporter.addError(startByte, endByte, kj::mv(message));
+  }
+}
+
 }  // namespace compiler
 }  // namespace capnp

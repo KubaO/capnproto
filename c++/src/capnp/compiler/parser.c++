@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <iostream>
 
 #if _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -74,6 +75,7 @@ void parseFile(List<Statement>::Reader statements, ParsedFile::Builder result,
   fileDecl.setFile(VOID);
 
   for (auto statement: statements) {
+    std::cout << "78: statement" << statement.toString().flatten().cStr() << std::endl;
     KJ_IF_MAYBE(decl, parser.parseStatement(statement, parser.getParsers().fileLevelDecl)) {
       Declaration::Builder builder = decl->get();
       switch (builder.which()) {
@@ -264,17 +266,17 @@ public:
         if (best < item.end()) {
           // Report error from the point where parsing failed to the end of the item.
           errorReporter.addError(
-              best->getStartByte(), (item.end() - 1)->getEndByte(), "Parse error.");
+              best->getStartByte(), (item.end() - 1)->getEndByte(), "267: Parse error.");
         } else if (item.size() > 0) {
           // The item is non-empty and the parser consumed all of it before failing.  Report an
           // error for the whole thing.
           errorReporter.addError(
-              item.begin()->getStartByte(), (item.end() - 1)->getEndByte(), "Parse error.");
+              item.begin()->getStartByte(), (item.end() - 1)->getEndByte(), "272: Parse error.");
         } else {
           // The item has no content.
           // TODO(cleanup):  We don't actually know the item's location, so we can only report
           //   an error across the whole list.  Fix this.
-          errorReporter.addError(items.startByte, items.endByte, "Parse error: Empty list item.");
+          errorReporter.addError(items.startByte, items.endByte, "277: Parse error: Empty list item.");
         }
       }
     }
@@ -1031,6 +1033,7 @@ kj::Maybe<Orphan<Declaration>> CapnpParser::parseStatement(
   auto fullParser = p::sequence(parser, p::endOfInput);
 
   auto tokens = statement.getTokens();
+  std::cout << "parseStatement: " << statement.toString().flatten().cStr() << std::endl;
   ParserInput parserInput(tokens.begin(), tokens.end());
 
   KJ_IF_MAYBE(output, fullParser(parserInput)) {
@@ -1056,6 +1059,7 @@ kj::Maybe<Orphan<Declaration>> CapnpParser::parseStatement(
           auto memberStatements = statement.getBlock();
           kj::Vector<Orphan<Declaration>> members(memberStatements.size());
           for (auto memberStatement: memberStatements) {
+            std::cout << "member statement\n";
             KJ_IF_MAYBE(member, parseStatement(memberStatement, *memberParser)) {
               members.add(kj::mv(*member));
             }
@@ -1083,7 +1087,7 @@ kj::Maybe<Orphan<Declaration>> CapnpParser::parseStatement(
       bestByte = statement.getStartByte();
     }
 
-    errorReporter.addError(bestByte, bestByte, "Parse error.");
+    errorReporter.addError(bestByte, bestByte, "1086: Parse error.");
     return nullptr;
   }
 }

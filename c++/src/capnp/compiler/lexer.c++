@@ -34,7 +34,7 @@ bool lex(kj::ArrayPtr<const char> input, LexedStatements::Builder result,
 
   auto parser = p::sequence(lexer.getParsers().statementSequence, p::endOfInput);
 
-  Lexer::ParserInput parserInput(input.begin(), input.end());
+  Lexer::ParserInput parserInput(input.begin(), input.end(), lexer);
   kj::Maybe<kj::Array<Orphan<Statement>>> parseOutput = parser(parserInput);
 
   KJ_IF_MAYBE(output, parseOutput) {
@@ -44,8 +44,12 @@ bool lex(kj::ArrayPtr<const char> input, LexedStatements::Builder result,
     }
     return true;
   } else {
-    uint32_t best = parserInput.getBest();
-    errorReporter.addError(best, best, kj::str("Parse error."));
+    KJ_IF_MAYBE(errorReport, lexer.takeErrorReport()) {
+      errorReport->reportTo(errorReporter);
+    } else {
+      uint32_t best = parserInput.getBest();
+      errorReporter.addError(best, best, kj::str("48: Parse error."));
+    }
     return false;
   }
 }
@@ -56,7 +60,7 @@ bool lex(kj::ArrayPtr<const char> input, LexedTokens::Builder result,
 
   auto parser = p::sequence(lexer.getParsers().tokenSequence, p::endOfInput);
 
-  Lexer::ParserInput parserInput(input.begin(), input.end());
+  Lexer::ParserInput parserInput(input.begin(), input.end(), lexer);
   kj::Maybe<kj::Array<Orphan<Token>>> parseOutput = parser(parserInput);
 
   KJ_IF_MAYBE(output, parseOutput) {
@@ -67,7 +71,7 @@ bool lex(kj::ArrayPtr<const char> input, LexedTokens::Builder result,
     return true;
   } else {
     uint32_t best = parserInput.getBest();
-    errorReporter.addError(best, best, kj::str("Parse error."));
+    errorReporter.addError(best, best, kj::str("70: Parse error."));
     return false;
   }
 }
@@ -242,6 +246,7 @@ Lexer::Lexer(Orphanage orphanageParam, ErrorReporter& errorReporter)
   auto& statementSequence = parsers.statementSequence;
 
   auto& statementEnd = arena.copy(p::oneOf(
+      ifError<Orphan<Statement>>("Parse error. Expected ';'"),
       transform(p::sequence(p::exactChar<';'>(), docComment),
           [this](kj::Maybe<kj::Array<kj::String>>&& comment) -> Orphan<Statement> {
             auto result = orphanage.newOrphan<Statement>();
@@ -274,7 +279,8 @@ Lexer::Lexer(Orphanage orphanageParam, ErrorReporter& errorReporter)
           })
       ));
 
-  auto& statement = arena.copy(p::transformWithLocation(p::sequence(tokenSequence, statementEnd),
+  auto& statement = arena.copy(p::transformWithLocation(
+        p::sequence(tokenSequence, statementEnd),
       [](Location loc, kj::Array<Orphan<Token>>&& tokens, Orphan<Statement>&& statement) {
         auto builder = statement.get();
         auto tokensBuilder = builder.initTokens(tokens.size());

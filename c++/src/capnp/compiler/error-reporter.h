@@ -80,6 +80,31 @@ public:
   // of previous errors.
 };
 
+class ErrorReport {
+  // An error report that can be reported to an ErrorReporter
+
+public:
+  inline ErrorReport(kj::String message) : message(kj::mv(message)) {}
+
+  inline ErrorReport(uint32_t startByte, uint32_t endByte, kj::String message)
+    : startByte(startByte), endByte(endByte), message(kj::mv(message)) {}
+
+  template <typename T>
+  inline ErrorReport(T&& decl, kj::String message)
+    : startByte(decl.getStartByte()), endByte(decl.getEndByte()), message(kj::mv(message)) {}
+
+  void reportTo(ErrorReporter &reporter);
+
+  inline void setLocation(uint32_t byte) {
+    startByte = endByte = byte;
+  }
+
+private:
+  uint32_t startByte = 0;
+  uint32_t endByte = 0;
+  kj::String message;
+};
+
 class LineBreakTable {
 public:
   LineBreakTable(kj::ArrayPtr<const char> content);
