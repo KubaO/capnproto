@@ -176,6 +176,8 @@ public:
   kj::Maybe<Value&> find(KeyLike&& key);
   template <typename KeyLike>
   kj::Maybe<const Value&> find(KeyLike&& key) const;
+  template <typename KeyLike>
+  kj::Maybe<Value> findAndRelease(KeyLike&& key);
   // Search for a matching key. The input does not have to be of type `Key`; it merely has to
   // be something that can be compared against `Key`.
 
@@ -472,6 +474,11 @@ template <typename Key, typename Value>
 template <typename KeyLike>
 kj::Maybe<const Value&> TreeMap<Key, Value>::find(KeyLike&& key) const {
   return table.find(key).map([](const Entry& e) -> const Value& { return e.value; });
+}
+template <typename Key, typename Value>
+template <typename KeyLike>
+kj::Maybe<Value> TreeMap<Key, Value>::findAndRelease(KeyLike&& key) {
+  return table.find(key).map([this](const Entry& e) -> Value { return kj::mv(table.release(e).value); });
 }
 
 template <typename Key, typename Value>

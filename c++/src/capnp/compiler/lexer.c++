@@ -31,11 +31,16 @@ namespace p = kj::parse;
 bool lex(kj::ArrayPtr<const char> input, LexedStatements::Builder result,
          ErrorReporter& errorReporter) {
   Lexer lexer(Orphanage::getForMessageContaining(result), errorReporter);
+  kj::Arena arena;
+  auto cache = p::makeCache<Lexer::ParserInput>(arena);
 
   auto parser = p::sequence(lexer.getParsers().statementSequence, p::endOfInput);
+  auto cachedParser = cache(parser);
 
   Lexer::ParserInput parserInput(input.begin(), input.end());
-  kj::Maybe<kj::Array<Orphan<Statement>>> parseOutput = parser(parserInput);
+  kj::Maybe<kj::Array<Orphan<Statement>>> parseOutput = cachedParser.release(parserInput);
+  KJ_LOG(INFO, "lexer ", cache.getSize());
+  KJ_LOG(INFO, "lexer ", cache.getHitCount());
 
   KJ_IF_MAYBE(output, parseOutput) {
     auto l = result.initStatements(output->size());

@@ -41,7 +41,9 @@
 
 #include "../common.h"
 #include "../memory.h"
+#include "../arena.h"
 #include "../array.h"
+#include "../map.h"
 #include "../tuple.h"
 #include "../vector.h"
 #if _MSC_VER && !__clang__
@@ -816,6 +818,99 @@ public:
 
 constexpr EndOfInput_ endOfInput = EndOfInput_();
 // A parser that succeeds only if it is called with no input.
+
+// -------------------------------------------------------------------
+// <cache>()
+// Output = Reference to a locally stored result of applying the subparser
+// to the input value. A subparser will only be invoked in a given location
+// if it hadn't succeeded there yet. Once it succeeds, the result is locally
+// stored, and a reference to this cached value is returned. The values can
+// be moved out of the cache once parsing is done, since a reference is returned.
+
+template <typename CacheInput>
+class Cache_ {
+  struct ImplBase {};
+  template <typename SubParser>
+  struct Impl;
+
+public:
+  explicit Cache_(Arena& arena) : arena(arena) {}
+  template <typename SubParser>
+  auto operator()(SubParser&& subParser) {
+    return Impl<SubParser>(*this, kj::fwd<SubParser>(subParser));
+  }
+  uint getSize() const { return index.size(); }
+  uint getHitCount() const { return hitCount; }
+
+private:
+  Arena& arena;
+  struct Key {
+    using Position = decltype(instance<CacheInput&&>().getPosition());
+    Position pos;
+    const ImplBase* impl;
+    constexpr bool operator<(const Key& o) const {
+      return pos < o.pos && impl < o.impl;
+    }
+    constexpr bool operator==(const Key& o) const {
+      return pos == o.pos && impl == o.impl;
+    }
+  };
+  class OutputPtr {
+    void* ptr;
+    OutputPtr(void* ptr) : ptr(ptr) {}
+  public:
+    template <typename Impl>
+    typename Impl::Output& getOutputRefFor() const { return *static_cast<Impl::Output*>(ptr); }
+    template <typename Impl>
+    typename Impl::Output getOutputValFor() const { return kj::mv(*static_cast<Impl::Output*>(ptr)); }
+    template <typename Impl>
+    static OutputPtr makeFor(typename Impl::Output& ref) { return {&ref}; }
+    OutputPtr() = delete;
+  };
+
+  TreeMap<Key, OutputPtr> index;
+  uint hitCount = 0;
+};
+
+template <typename CacheInput>
+template <typename SubParser>
+struct Cache_<CacheInput>::Impl: public Cache_<CacheInput>::ImplBase {
+  using Output = Decay<decltype(instance<OutputType<SubParser, CacheInput>>())>;
+  explicit constexpr Impl(Cache_& cache, SubParser&& subParser) : cache(cache), subParser(kj::mv(subParser)) {}
+
+  constexpr Maybe<const Output&> operator()(CacheInput &input) const {
+    auto pos = input.getPosition();
+    Cache_::Key key{pos, this};
+    KJ_IF_MAYBE(output, cache.index.find(key)) {
+      ++cache.hitCount;
+      return output->getOutputRefFor<Impl>();
+    }
+    KJ_IF_MAYBE(output, subParser(input)) {
+      auto &local = cache.arena.copy(kj::mv(*output));
+      cache.index.insert(key, OutputPtr::makeFor<Impl>(local));
+      return local;
+    }
+    return {};
+  }
+
+  constexpr Maybe<Output> release(CacheInput& input) const {
+    auto pos = input.getPosition();
+    Cache_::Key key{pos, this};
+    KJ_IF_MAYBE(output, cache.index.findAndRelease(key)) {
+      ++cache.hitCount;
+      return output->getOutputValFor<Impl>();
+    }
+    return subParser(input);
+  }
+
+  Cache_& cache;
+  SubParser subParser;
+};
+
+template <typename Input>
+Cache_<Input> makeCache(Arena &arena) {
+    return Cache_<Input>(arena);
+}
 
 }  // namespace parse
 }  // namespace kj
