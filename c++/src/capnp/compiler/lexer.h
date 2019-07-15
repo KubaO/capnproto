@@ -88,10 +88,15 @@ public:
   };
 
   const Parsers& getParsers() { return parsers; }
+  const kj::parse::Cache<ParserInput>& getCache() { return cache; }
 
 private:
   Orphanage orphanage;
   kj::Arena arena;
+  // Arena for storage of parsers
+  kj::Arena cacheArena;
+  // Arena for storage of cached parser output
+  kj::parse::Cache<ParserInput> cache;
   Parsers parsers;
 };
 

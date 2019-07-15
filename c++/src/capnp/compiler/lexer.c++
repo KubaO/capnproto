@@ -31,14 +31,12 @@ namespace p = kj::parse;
 bool lex(kj::ArrayPtr<const char> input, LexedStatements::Builder result,
          ErrorReporter& errorReporter) {
   Lexer lexer(Orphanage::getForMessageContaining(result), errorReporter);
-  kj::Arena arena;
-  auto cache = p::makeCache<Lexer::ParserInput>(arena);
 
   auto parser = p::sequence(lexer.getParsers().statementSequence, p::endOfInput);
-  auto cachedParser = cache(parser);
 
   Lexer::ParserInput parserInput(input.begin(), input.end());
-  kj::Maybe<kj::Array<Orphan<Statement>>> parseOutput = cachedParser.release(parserInput);
+  kj::Maybe<kj::Array<Orphan<Statement>>> parseOutput = parser(parserInput);
+  auto &cache = lexer.getCache();
   KJ_LOG(INFO, "lexer ", cache.getSize());
   KJ_LOG(INFO, "lexer ", cache.getHitCount());
 
@@ -148,14 +146,112 @@ constexpr auto docComment = p::optional(p::sequence(
 
 }  // namespace
 
+void cacheTest() {
+  kj::Arena arena;
+  auto cache = kj::parse::makeCache<Lexer::ParserInput>(arena);
+  const auto str = kj::str("abc");
+
+  auto& parseChars = arena.copy(p::transform(p::sequence(p::many(p::any), p::endOfInput),
+      [](kj::Array<char>&& in) -> kj::Array<char> { return kj::mv(in); }));
+  //Lexer::Parser<kj::Array<char>> parseCharsRef = parseChars;
+
+  auto& parseCharsCached = arena.copy(cache(parseChars));
+  //Lexer::Parser<const kj::Array<char>> parseCharsCachedRef = parseCharsCached;
+
+  Lexer::ParserInput input1(str.begin(), str.end());
+  parseChars(input1);
+
+  Lexer::ParserInput input2(str.begin(), str.end());
+  parseCharsCached(input2);
+
+
+
+}
+
+struct CacheTest {
+  Orphanage orphanage;
+  kj::Arena arena;
+
+  using ParserInput = Lexer::ParserInput;
+
+  template <typename Output>
+  using Parser = kj::parse::ParserRef<ParserInput, Output>;
+
+  //auto makeInput = [str = "abc"]() -> Lexer::ParserInput { return {&str[0], &str[0] + sizeof(str)}; };
+
+  CacheTest() {
+    auto cache = kj::parse::makeCache<ParserInput>(arena);
+
+    auto& parseChar = arena.copy(p::transform(p::any, [](char in) -> char { return in; }));
+    auto& parseCharCached = arena.copy(cache(parseChar));
+
+    const auto str = kj::str("abc");
+    Lexer::ParserInput input(str.begin(), str.end());
+
+    parseChar(input);
+    parseCharCached(input);
+
+
+
+#if 0
+
+    Parser<kj::Array<Orphan<Token>>> tokenSequence;
+
+    auto commaDelimitedList = cache(p::many(p::sequence(p::exactChar<','>(), tokenSequence)));
+
+    Parser<const kj::Array<kj::Array<Orphan<Token>>>&> cdlRef = commaDelimitedList;
+
+    cdlRef(input);
+
+    kj::Array<kj::Array<Orphan<Token>>> arr;
+//    p::transform(cdlRef, [](kj::Array<kj::Array<Orphan<Token>>>&&) -> Orphan<Token> { return {}; })(static_cast<const kj::Array<kj::Array<Orphan<Token>>>&>(arr));
+
+
+    Parser<kj::Array<kj::Array<Orphan<Token>>>> cdlRef2;
+    auto simpleToken = p::transform(cdlRef, [](const kj::Array<kj::Array<Orphan<Token>>>&) -> int { });
+    simpleToken(input);
+
+    cdlRef(input);
+
+    // Note: It's the transformer functor that's the problem.
+
+    //Parser<Orphan<Token>> simpleTokenRef = simpleToken;
+
+    auto token =
+        p::transform(
+            sequence(p::exactChar<'('>(), cdlRef, p::exactChar<')'>()),
+            [](kj::Array<kj::Array<Orphan<Token>>>&&) -> Orphan<Token> {
+            return {};
+            });
+
+#if 0
+    Parser<Orphan<Token>> tokenRef = token;
+#endif
+
+#if 1
+
+    auto tokenSeq = p::sequence(commentsAndWhitespace, p::many(p::sequence(token, commentsAndWhitespace)));
+#if 0
+    Parser<kj::Array<Orphan<Token>>> tokenSeqRef = tokenSeq;
+#endif
+#endif
+#endif
+  }
+};
+
+template <typename SubParser>
+SubParser no_cache(SubParser&& subParser) {
+  return kj::fwd<SubParser>(subParser);
+}
+
 Lexer::Lexer(Orphanage orphanageParam, ErrorReporter& errorReporter)
-    : orphanage(orphanageParam) {
+    : orphanage(orphanageParam), cache(cacheArena) {
 
   // Note that because passing an lvalue to a parser constructor uses it by-referencee, it's safe
   // for us to use parsers.tokenSequence even though we haven't yet constructed it.
   auto& tokenSequence = parsers.tokenSequence;
 
-  auto& commaDelimitedList = arena.copy(p::transform(
+  auto& commaDelimitedList = arena.copy(no_cache(p::transform(
       p::sequence(tokenSequence, p::many(p::sequence(p::exactChar<','>(), tokenSequence))),
       [](kj::Array<Orphan<Token>>&& first, kj::Array<kj::Array<Orphan<Token>>>&& rest)
           -> kj::Array<kj::Array<Orphan<Token>>> {
@@ -176,7 +272,7 @@ Lexer::Lexer(Orphanage orphanageParam, ErrorReporter& errorReporter)
           }
           return result.finish();
         }
-      }));
+      })));
 
   auto& token = arena.copy(p::oneOf(
       p::transformWithLocation(p::identifier,

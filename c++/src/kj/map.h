@@ -478,7 +478,7 @@ kj::Maybe<const Value&> TreeMap<Key, Value>::find(KeyLike&& key) const {
 template <typename Key, typename Value>
 template <typename KeyLike>
 kj::Maybe<Value> TreeMap<Key, Value>::findAndRelease(KeyLike&& key) {
-  return table.find(key).map([this](const Entry& e) -> Value { return kj::mv(table.release(e).value); });
+  return table.find(key).map([this](Entry& e) -> Value { return kj::mv(table.release(e).value); });
 }
 
 template <typename Key, typename Value>
