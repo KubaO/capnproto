@@ -19,6 +19,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+/*
+Notes: Applications of substitutions needs its own stage. Each substitution
+application will resolve some parameters, i.e. substitutions are done on concrete
+type arguments only. Then the stage has to be repeated as substitutions can nest,
+until no substitutions are left (success), or some substitutions are left but can't
+be resolved - that's an error. During substitution, cycle checking is unnecessary,
+since substitution should be moving forward, i.e. each time some type parameters
+get resolved. But we shall see if that really happens or not.
+
+Once no more substitutions can be performed, the rest of the translation can
+happen.
+*/
+
 #include "node-translator.h"
 #include "parser.h"      // only for generateGroupId()
 #include <capnp/serialize.h>
@@ -1261,8 +1274,16 @@ kj::Maybe<NodeTranslator::BrandedDecl> NodeTranslator::BrandScope::compileDeclEx
       errorReporter.addErrorOn(source, "Expected name.");
       return nullptr;
 
-    case Expression::RELATIVE_NAME: {
-      auto name = source.getRelativeName();
+    case Expression::RELATIVE_NAME:
+    case Expression::TEMPLATE_NAME: {
+      LocatedText::Reader name;
+      if (source.which() == Expression::RELATIVE_NAME) {
+        name = source.getRelativeName();
+      } else if (source.which() == Expression::TEMPLATE_NAME) {
+        name = source.getTemplateName();
+      } else {
+        KJ_UNREACHABLE;
+      }
       auto nameValue = name.getValue();
 
       // Check implicit method params first.

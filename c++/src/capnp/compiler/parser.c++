@@ -333,8 +333,10 @@ static Declaration::Builder initDecl(
     Declaration::Builder builder, Located<Text::Reader>&& name,
     kj::Maybe<Orphan<LocatedInteger>>&& id,
     kj::Maybe<Located<kj::Array<kj::Maybe<Located<Text::Reader>>>>>&& genericParameters,
-    kj::Array<Orphan<Declaration::AnnotationApplication>>&& annotations) {
+    kj::Array<Orphan<Declaration::AnnotationApplication>>&& annotations,
+    bool isSubstitutionTemplate = false) {
   name.copyTo(builder.initName());
+  builder.setIsSubstitutionTemplate(isSubstitutionTemplate);
   KJ_IF_MAYBE(i, id) {
     builder.getId().adoptUid(kj::mv(*i));
   }
@@ -528,6 +530,14 @@ CapnpParser::CapnpParser(Orphanage orphanageParam, ErrorReporter& errorReporterP
                     name.copyTo(builder.initAbsoluteName());
                     return result;
                   }),
+              p::transform(p::sequence(identifier, op("!")),
+                  [this](Located<Text::Reader>&& name) -> Orphan<Expression> {
+                    auto result = orphanage.newOrphan<Expression>();
+                    auto builder = result.get();
+                    name.copyTo(builder.initTemplateName());
+                    name.copyLocationTo(builder);
+                    return result;
+                  }),
               p::transform(identifier,
                   [this](Located<Text::Reader>&& name) -> Orphan<Expression> {
                     auto result = orphanage.newOrphan<Expression>();
@@ -692,16 +702,17 @@ CapnpParser::CapnpParser(Orphanage orphanageParam, ErrorReporter& errorReporterP
       }));
 
   parsers.structDecl = arena.copy(p::transform(
-      p::sequence(keyword("struct"), identifier, p::optional(parsers.uid),
+      p::sequence(keyword("struct"), identifier, p::optional(op("!")), p::optional(parsers.uid),
                   p::optional(parenthesizedList(identifier, errorReporter)),
                   p::many(parsers.annotation)),
-      [this](Located<Text::Reader>&& name, kj::Maybe<Orphan<LocatedInteger>>&& id,
+      [this](Located<Text::Reader>&& name, kj::Maybe<kj::Tuple<>>&& exclamation, kj::Maybe<Orphan<LocatedInteger>>&& id,
              kj::Maybe<Located<kj::Array<kj::Maybe<Located<Text::Reader>>>>>&& genericParameters,
              kj::Array<Orphan<Declaration::AnnotationApplication>>&& annotations)
                  -> DeclParserResult {
         auto decl = orphanage.newOrphan<Declaration>();
+        bool isSubstitutionTemplate = exclamation != nullptr;
         initDecl(decl.get(), kj::mv(name), kj::mv(id), kj::mv(genericParameters),
-                 kj::mv(annotations)).setStruct();
+                 kj::mv(annotations), isSubstitutionTemplate).setStruct();
         return DeclParserResult(kj::mv(decl), parsers.structLevelDecl);
       }));
 

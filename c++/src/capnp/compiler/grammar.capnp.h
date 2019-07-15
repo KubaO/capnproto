@@ -21,6 +21,7 @@ CAPNP_DECLARE_SCHEMA(8e207d4dfe54d0de);
 CAPNP_DECLARE_SCHEMA(c90246b71adedbaa);
 CAPNP_DECLARE_SCHEMA(aee8397040b0df7a);
 CAPNP_DECLARE_SCHEMA(aa28e1400d793359);
+CAPNP_DECLARE_SCHEMA(a0a47e60aa5e035d);
 CAPNP_DECLARE_SCHEMA(96efe787c17e83bb);
 CAPNP_DECLARE_SCHEMA(d5e71144af1ce175);
 CAPNP_DECLARE_SCHEMA(d00489d473826290);
@@ -112,10 +113,13 @@ struct Expression {
     ABSOLUTE_NAME,
     IMPORT,
     EMBED,
+    TEMPLATE_NAME,
+    SUBSTITUTION,
   };
   struct Param;
   struct Application;
   struct Member;
+  struct Substitution;
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(8e207d4dfe54d0de, 3, 2)
@@ -168,6 +172,21 @@ struct Expression::Member {
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(aa28e1400d793359, 3, 2)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct Expression::Substitution {
+  Substitution() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(a0a47e60aa5e035d, 3, 2)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -843,6 +862,13 @@ public:
   inline bool hasEmbed() const;
   inline  ::capnp::compiler::LocatedText::Reader getEmbed() const;
 
+  inline bool isTemplateName() const;
+  inline bool hasTemplateName() const;
+  inline  ::capnp::compiler::LocatedText::Reader getTemplateName() const;
+
+  inline bool isSubstitution() const;
+  inline typename Substitution::Reader getSubstitution() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -965,6 +991,18 @@ public:
   inline  ::capnp::compiler::LocatedText::Builder initEmbed();
   inline void adoptEmbed(::capnp::Orphan< ::capnp::compiler::LocatedText>&& value);
   inline ::capnp::Orphan< ::capnp::compiler::LocatedText> disownEmbed();
+
+  inline bool isTemplateName();
+  inline bool hasTemplateName();
+  inline  ::capnp::compiler::LocatedText::Builder getTemplateName();
+  inline void setTemplateName( ::capnp::compiler::LocatedText::Reader value);
+  inline  ::capnp::compiler::LocatedText::Builder initTemplateName();
+  inline void adoptTemplateName(::capnp::Orphan< ::capnp::compiler::LocatedText>&& value);
+  inline ::capnp::Orphan< ::capnp::compiler::LocatedText> disownTemplateName();
+
+  inline bool isSubstitution();
+  inline typename Substitution::Builder getSubstitution();
+  inline typename Substitution::Builder initSubstitution();
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -1280,6 +1318,98 @@ private:
 };
 #endif  // !CAPNP_LITE
 
+class Expression::Substitution::Reader {
+public:
+  typedef Substitution Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasTemplate() const;
+  inline  ::capnp::compiler::Expression::Reader getTemplate() const;
+
+  inline bool hasParams() const;
+  inline  ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>::Reader getParams() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class Expression::Substitution::Builder {
+public:
+  typedef Substitution Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasTemplate();
+  inline  ::capnp::compiler::Expression::Builder getTemplate();
+  inline void setTemplate( ::capnp::compiler::Expression::Reader value);
+  inline  ::capnp::compiler::Expression::Builder initTemplate();
+  inline void adoptTemplate(::capnp::Orphan< ::capnp::compiler::Expression>&& value);
+  inline ::capnp::Orphan< ::capnp::compiler::Expression> disownTemplate();
+
+  inline bool hasParams();
+  inline  ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>::Builder getParams();
+  inline void setParams( ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>::Reader value);
+  inline  ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>::Builder initParams(unsigned int size);
+  inline void adoptParams(::capnp::Orphan< ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>> disownParams();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class Expression::Substitution::Pipeline {
+public:
+  typedef Substitution Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::capnp::compiler::Expression::Pipeline getTemplate();
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
 class Declaration::Reader {
 public:
   typedef Declaration Reads;
@@ -1422,6 +1552,8 @@ public:
 
   inline bool isBuiltinCapability() const;
   inline  ::capnp::Void getBuiltinCapability() const;
+
+  inline bool getIsSubstitutionTemplate() const;
 
 private:
   ::capnp::_::StructReader _reader;
@@ -1639,6 +1771,9 @@ public:
   inline bool isBuiltinCapability();
   inline  ::capnp::Void getBuiltinCapability();
   inline void setBuiltinCapability( ::capnp::Void value = ::capnp::VOID);
+
+  inline bool getIsSubstitutionTemplate();
+  inline void setIsSubstitutionTemplate(bool value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -3975,6 +4110,83 @@ inline ::capnp::Orphan< ::capnp::compiler::LocatedText> Expression::Builder::dis
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
+inline bool Expression::Reader::isTemplateName() const {
+  return which() == Expression::TEMPLATE_NAME;
+}
+inline bool Expression::Builder::isTemplateName() {
+  return which() == Expression::TEMPLATE_NAME;
+}
+inline bool Expression::Reader::hasTemplateName() const {
+  if (which() != Expression::TEMPLATE_NAME) return false;
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool Expression::Builder::hasTemplateName() {
+  if (which() != Expression::TEMPLATE_NAME) return false;
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::compiler::LocatedText::Reader Expression::Reader::getTemplateName() const {
+  KJ_IREQUIRE((which() == Expression::TEMPLATE_NAME),
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::compiler::LocatedText>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::capnp::compiler::LocatedText::Builder Expression::Builder::getTemplateName() {
+  KJ_IREQUIRE((which() == Expression::TEMPLATE_NAME),
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::compiler::LocatedText>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void Expression::Builder::setTemplateName( ::capnp::compiler::LocatedText::Reader value) {
+  _builder.setDataField<Expression::Which>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, Expression::TEMPLATE_NAME);
+  ::capnp::_::PointerHelpers< ::capnp::compiler::LocatedText>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::capnp::compiler::LocatedText::Builder Expression::Builder::initTemplateName() {
+  _builder.setDataField<Expression::Which>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, Expression::TEMPLATE_NAME);
+  return ::capnp::_::PointerHelpers< ::capnp::compiler::LocatedText>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void Expression::Builder::adoptTemplateName(
+    ::capnp::Orphan< ::capnp::compiler::LocatedText>&& value) {
+  _builder.setDataField<Expression::Which>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, Expression::TEMPLATE_NAME);
+  ::capnp::_::PointerHelpers< ::capnp::compiler::LocatedText>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::compiler::LocatedText> Expression::Builder::disownTemplateName() {
+  KJ_IREQUIRE((which() == Expression::TEMPLATE_NAME),
+              "Must check which() before get()ing a union member.");
+  return ::capnp::_::PointerHelpers< ::capnp::compiler::LocatedText>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool Expression::Reader::isSubstitution() const {
+  return which() == Expression::SUBSTITUTION;
+}
+inline bool Expression::Builder::isSubstitution() {
+  return which() == Expression::SUBSTITUTION;
+}
+inline typename Expression::Substitution::Reader Expression::Reader::getSubstitution() const {
+  KJ_IREQUIRE((which() == Expression::SUBSTITUTION),
+              "Must check which() before get()ing a union member.");
+  return typename Expression::Substitution::Reader(_reader);
+}
+inline typename Expression::Substitution::Builder Expression::Builder::getSubstitution() {
+  KJ_IREQUIRE((which() == Expression::SUBSTITUTION),
+              "Must check which() before get()ing a union member.");
+  return typename Expression::Substitution::Builder(_builder);
+}
+inline typename Expression::Substitution::Builder Expression::Builder::initSubstitution() {
+  _builder.setDataField<Expression::Which>(
+      ::capnp::bounded<0>() * ::capnp::ELEMENTS, Expression::SUBSTITUTION);
+  _builder.getPointerField(::capnp::bounded<0>() * ::capnp::POINTERS).clear();
+  _builder.getPointerField(::capnp::bounded<1>() * ::capnp::POINTERS).clear();
+  return typename Expression::Substitution::Builder(_builder);
+}
 inline  ::capnp::compiler::Expression::Param::Which Expression::Param::Reader::which() const {
   return _reader.getDataField<Which>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
@@ -4251,6 +4463,79 @@ inline void Expression::Member::Builder::adoptName(
 }
 inline ::capnp::Orphan< ::capnp::compiler::LocatedText> Expression::Member::Builder::disownName() {
   return ::capnp::_::PointerHelpers< ::capnp::compiler::LocatedText>::disown(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
+}
+
+inline bool Expression::Substitution::Reader::hasTemplate() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool Expression::Substitution::Builder::hasTemplate() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::compiler::Expression::Reader Expression::Substitution::Reader::getTemplate() const {
+  return ::capnp::_::PointerHelpers< ::capnp::compiler::Expression>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::capnp::compiler::Expression::Builder Expression::Substitution::Builder::getTemplate() {
+  return ::capnp::_::PointerHelpers< ::capnp::compiler::Expression>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::capnp::compiler::Expression::Pipeline Expression::Substitution::Pipeline::getTemplate() {
+  return  ::capnp::compiler::Expression::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void Expression::Substitution::Builder::setTemplate( ::capnp::compiler::Expression::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::compiler::Expression>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::capnp::compiler::Expression::Builder Expression::Substitution::Builder::initTemplate() {
+  return ::capnp::_::PointerHelpers< ::capnp::compiler::Expression>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void Expression::Substitution::Builder::adoptTemplate(
+    ::capnp::Orphan< ::capnp::compiler::Expression>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::compiler::Expression>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::compiler::Expression> Expression::Substitution::Builder::disownTemplate() {
+  return ::capnp::_::PointerHelpers< ::capnp::compiler::Expression>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+
+inline bool Expression::Substitution::Reader::hasParams() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
+}
+inline bool Expression::Substitution::Builder::hasParams() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS).isNull();
+}
+inline  ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>::Reader Expression::Substitution::Reader::getParams() const {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>>::get(_reader.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
+}
+inline  ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>::Builder Expression::Substitution::Builder::getParams() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>>::get(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS));
+}
+inline void Expression::Substitution::Builder::setParams( ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>::Reader value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>>::set(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>::Builder Expression::Substitution::Builder::initParams(unsigned int size) {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>>::init(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS), size);
+}
+inline void Expression::Substitution::Builder::adoptParams(
+    ::capnp::Orphan< ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>>&& value) {
+  ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>>::adopt(_builder.getPointerField(
+      ::capnp::bounded<1>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>> Expression::Substitution::Builder::disownParams() {
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::compiler::Expression::Param,  ::capnp::Kind::STRUCT>>::disown(_builder.getPointerField(
       ::capnp::bounded<1>() * ::capnp::POINTERS));
 }
 
@@ -5413,6 +5698,20 @@ inline void Declaration::Builder::setBuiltinCapability( ::capnp::Void value) {
       ::capnp::bounded<1>() * ::capnp::ELEMENTS, Declaration::BUILTIN_CAPABILITY);
   _builder.setDataField< ::capnp::Void>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
+}
+
+inline bool Declaration::Reader::getIsSubstitutionTemplate() const {
+  return _reader.getDataField<bool>(
+      ::capnp::bounded<112>() * ::capnp::ELEMENTS);
+}
+
+inline bool Declaration::Builder::getIsSubstitutionTemplate() {
+  return _builder.getDataField<bool>(
+      ::capnp::bounded<112>() * ::capnp::ELEMENTS);
+}
+inline void Declaration::Builder::setIsSubstitutionTemplate(bool value) {
+  _builder.setDataField<bool>(
+      ::capnp::bounded<112>() * ::capnp::ELEMENTS, value);
 }
 
 inline bool Declaration::BrandParameter::Reader::hasName() const {

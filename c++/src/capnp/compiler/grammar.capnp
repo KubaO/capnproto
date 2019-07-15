@@ -68,6 +68,9 @@ struct Expression {
     absoluteName @15 :LocatedText;
     # An identifier with leading '.'.
 
+    templateName @18 :LocatedText;
+    # An identifier with a trailing '!'.
+
     import @16 :LocatedText;
     # An import directive.
 
@@ -88,6 +91,13 @@ struct Expression {
 
       function @11 :Expression;
       params @12 :List(Param);
+    }
+
+    substitution :group {
+      # Application of a substitution template to some parameters, e.g. "foo!(bar, baz)".
+
+      template @19 :Expression;
+      params @20 :List(Param);
     }
 
     member :group {
@@ -116,6 +126,8 @@ struct Declaration {
   # A declaration statement.
 
   name @0 :LocatedText;
+
+  isSubstitutionTemplate @61 :Bool;
 
   id :union {
     unspecified @1 :Void;
